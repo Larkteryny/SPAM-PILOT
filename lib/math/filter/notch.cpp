@@ -35,6 +35,26 @@ void NotchFilt::setup(double notch_freq, double bandwidth, double sample_freq)
     a2n_ = (float)a2 / a0;   
 }
 
+void NotchFilt::update(float notch_freq, float bandwidth, float sample_freq_inv)
+/*
+Fast notch coefficient updater
+const bandwidth_inv: bandwidth / 2.0f
+const sample_freq_inv: 2.0f * M_PI / sample_freq
+*/
+{
+    // doesn't check for invalid bandwidth or sample_freq
+
+    float omega = notch_freq * sample_freq_inv;
+    float omega_sin = sinf(omega);
+
+    // normalized values
+    b0n_ = notch_freq / (notch_freq + omega_sin * bandwidth);
+    b1n_ = -2.0f * cosf(omega) * b0n_;
+    b2n_ = b0n_; // could be removed?
+    a1n_ = b1n_;
+    a2n_ = (notch_freq - omega_sin * bandwidth) / (notch_freq + omega_sin * bandwidth);
+}
+
 void NotchFilt::apply3d(const float input[3], float output[3])
 {
     // y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
